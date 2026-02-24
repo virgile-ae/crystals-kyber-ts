@@ -1,6 +1,6 @@
 import 'jest';
-import {Kyber512Service} from "../src/services/kyber512.service";
-import {Utilities} from "../src/lib/utilities";
+import { Kyber512Service } from "../src/services/kyber512.service";
+import { constantTimeCompare, hexToDec } from "../src/lib/utilities";
 
 describe('Kyber512Service', () => {
     let kyber512: Kyber512Service;
@@ -726,28 +726,28 @@ describe('Kyber512Service', () => {
                 let tmp: Array<number> = [];
                 let hexIndex = 0;
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 cipherTextArray.push(tmp);
             } else if (textByLine[counter][0] == 's' && textByLine[counter][1] == 's') {
                 let tmp: Array<number> = [];
                 let hexIndex = 0;
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 sharedSecretArray.push(tmp);
             } else if (textByLine[counter][0] == 's' && textByLine[counter][1] == 'k') {
                 let hexIndex = 0;
                 let tmp: Array<number> = [];
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 privateKeyArray.push(tmp);
             } else if (textByLine[counter][0] == 'p' && textByLine[counter][1] == 'k') {
                 let hexIndex = 0;
                 let tmp: Array<number> = [];
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 publicKeyArray.push(tmp);
             }
@@ -761,7 +761,7 @@ describe('Kyber512Service', () => {
             console.log("512 - decryptedSharedSecret [" + decryptedSharedSecret + "]");
 
             // success if both symmetric keys are the same
-            if (Utilities.constantTimeCompare(sharedSecretArray[i], decryptedSharedSecret) === 0) {
+            if (constantTimeCompare(sharedSecretArray[i], decryptedSharedSecret) === 0) {
                 console.log("512 - Test run [", i, "] success");
             } else {
                 console.log("512 - Test run [", i, "] fail");
@@ -771,10 +771,10 @@ describe('Kyber512Service', () => {
 
         if (failures == 0) {
             console.log("512 -  ");
-            console.log("512 - All test runs successful.")
+            console.log("512 - All test runs successful.");
         } else {
             console.log("512 -  ");
-            console.log(failures, " test cases have failed.")
+            console.log(failures, " test cases have failed.");
         }
         console.log("512 - ============================================================================");
     });
@@ -801,11 +801,11 @@ describe('Kyber512Service', () => {
         const bobSharedSecret: number[] = kyber512.decrypt(aliceCipherText, bobPrivateKey);
         console.log("512 - aliceSharedSecret [" + aliceSharedSecret + "]");
         console.log("512 - bobSharedSecret [" + bobSharedSecret + "]");
-        const result: number = Utilities.constantTimeCompare(aliceSharedSecret, bobSharedSecret);
+        const result: number = constantTimeCompare(aliceSharedSecret, bobSharedSecret);
         if (result === 0) {
-            console.log("512 - Bob to Alice Shared Secrets matched!")
+            console.log("512 - Bob to Alice Shared Secrets matched!");
         } else {
-            console.log("512 - Bob to Alice Shared Secrets did not match!")
+            console.log("512 - Bob to Alice Shared Secrets did not match!");
         }
         // Go the other way
         // Alice sends Bob her public key
@@ -820,11 +820,11 @@ describe('Kyber512Service', () => {
         const aliceSharedSecret2: number[] = kyber512.decrypt(bobCipherText2, alicePrivateKey);
         console.log("512 - aliceSharedSecret2 [" + aliceSharedSecret2 + "]");
         console.log("512 - bobSharedSecret2 [" + bobSharedSecret2 + "]");
-        const result2: number = Utilities.constantTimeCompare(aliceSharedSecret2, bobSharedSecret2);
+        const result2: number = constantTimeCompare(aliceSharedSecret2, bobSharedSecret2);
         if (result2 === 0) {
-            console.log("512 - Alice to Bob Shared Secrets matched!")
+            console.log("512 - Alice to Bob Shared Secrets matched!");
         } else {
-            console.log("512 - Alice to Bob Shared Secrets did not match!")
+            console.log("512 - Alice to Bob Shared Secrets did not match!");
         }
         console.log("512 - ============================================================================");
     });
@@ -846,7 +846,7 @@ describe('Kyber512Service', () => {
             const aliceCipherText: number[] = sharedSecretCipher[0];
             const aliceSharedSecret: number[] = sharedSecretCipher[1];
             if (prevCipherText != null) {
-                const ss1Result: number = Utilities.constantTimeCompare(prevCipherText, aliceCipherText);
+                const ss1Result: number = constantTimeCompare(prevCipherText, aliceCipherText);
                 if (ss1Result === 0) {
                     console.log("512 - Cipher Text was a DUPLICATE!");
                     ++fail;
@@ -854,7 +854,7 @@ describe('Kyber512Service', () => {
                     console.log("512 - Cipher Text was not a duplicate!");
                 }
 
-                const ss2Result: number = Utilities.constantTimeCompare(prevSharedSecret, aliceSharedSecret);
+                const ss2Result: number = constantTimeCompare(prevSharedSecret, aliceSharedSecret);
                 if (ss2Result === 0) {
                     console.log("512 - Shared Secret DUPLICATE!");
                     ++fail;

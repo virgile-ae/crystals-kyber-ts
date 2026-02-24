@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { Utilities } from "./utilities";
+import { randomIntUpTo, uint16 } from "./utilities";
 import { SHA3, SHAKE } from "sha3";
 import { Poly } from "./poly";
 import { KyberService } from "../services/kyber.service";
@@ -19,7 +19,7 @@ export class Indcpa {
         // random bytes for seed
         const rnd = Buffer.alloc(KyberService.paramsSymBytes);
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
-            rnd[i] = Utilities.nextInt(256);
+            rnd[i] = randomIntUpTo(256);
         }
 
         // hash rnd with SHA3-512
@@ -282,8 +282,8 @@ export class Indcpa {
 
         while ((uniformI < len) && ((j + 3) <= bufl)) {
             // compute d1 and d2
-            d1 = (Utilities.uint16((buf[j]) >> 0) | (Utilities.uint16(buf[j + 1]) << 8)) & 0xFFF;
-            d2 = (Utilities.uint16((buf[j + 1]) >> 4) | (Utilities.uint16(buf[j + 2]) << 4)) & 0xFFF;
+            d1 = (uint16((buf[j]) >> 0) | (uint16(buf[j + 1]) << 8)) & 0xFFF;
+            d2 = (uint16((buf[j + 1]) >> 4) | (uint16(buf[j + 2]) << 4)) & 0xFFF;
             // increment input buffer index by 3
             j = j + 3;
 

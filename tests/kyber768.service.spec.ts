@@ -1,6 +1,6 @@
 import 'jest';
-import {Kyber768Service} from "../src/services/kyber768.service";
-import {Utilities} from "../src/lib/utilities";
+import { Kyber768Service } from "../src/services/kyber768.service";
+import { constantTimeCompare, hexToDec } from "../src/lib/utilities";
 
 describe('Kyber768Service', () => {
     let kyber768: Kyber768Service;
@@ -730,28 +730,28 @@ describe('Kyber768Service', () => {
                 let tmp: Array<number> = [];
                 let hexIndex = 0;
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 cipherTextArray.push(tmp);
             } else if (textByLine[counter][0] == 's' && textByLine[counter][1] == 's') {
                 let tmp: Array<number> = [];
                 let hexIndex = 0;
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 sharedSecretArray.push(tmp);
             } else if (textByLine[counter][0] == 's' && textByLine[counter][1] == 'k') {
                 let hexIndex = 0;
                 let tmp: Array<number> = [];
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 privateKeyArray.push(tmp);
             } else if (textByLine[counter][0] == 'p' && textByLine[counter][1] == 'k') {
                 let hexIndex = 0;
                 let tmp: Array<number> = [];
                 for (let j = 5; j < textByLine[counter].length; j += 2) {
-                    tmp[hexIndex++] = Utilities.hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
+                    tmp[hexIndex++] = hexToDec(textByLine[counter][j] + textByLine[counter][j + 1]);
                 }
                 publicKeyArray.push(tmp);
             }
@@ -765,7 +765,7 @@ describe('Kyber768Service', () => {
             console.log("768 - decryptedSharedSecret [" + decryptedSharedSecret + "]");
 
             // success if both symmetric keys are the same
-            if (Utilities.constantTimeCompare(sharedSecretArray[i], decryptedSharedSecret) === 0) {
+            if (constantTimeCompare(sharedSecretArray[i], decryptedSharedSecret) === 0) {
                 console.log("768 - Test run [", i, "] success");
             } else {
                 console.log("768 - Test run [", i, "] fail");
@@ -775,10 +775,10 @@ describe('Kyber768Service', () => {
 
         if (failures == 0) {
             console.log("768 -  ");
-            console.log("768 - All test runs successful.")
+            console.log("768 - All test runs successful.");
         } else {
             console.log("768 -  ");
-            console.log(failures, " test cases have failed.")
+            console.log(failures, " test cases have failed.");
         }
         console.log("768 - ============================================================================");
     });
@@ -806,11 +806,11 @@ describe('Kyber768Service', () => {
         const bobSharedSecret: number[] = kyber768.decrypt(aliceCipherText, bobPrivateKey);
         console.log("768 - aliceSharedSecret [" + aliceSharedSecret + "]");
         console.log("768 - bobSharedSecret [" + bobSharedSecret + "]");
-        const result: number = Utilities.constantTimeCompare(aliceSharedSecret, bobSharedSecret);
+        const result: number = constantTimeCompare(aliceSharedSecret, bobSharedSecret);
         if (result === 0) {
-            console.log("768 - Bob to Alice Shared Secrets matched!")
+            console.log("768 - Bob to Alice Shared Secrets matched!");
         } else {
-            console.log("768 - Bob to Alice Shared Secrets did not match!")
+            console.log("768 - Bob to Alice Shared Secrets did not match!");
         }
         // Go the other way
         // Alice sends Bob her public key
@@ -825,11 +825,11 @@ describe('Kyber768Service', () => {
         const aliceSharedSecret2: number[] = kyber768.decrypt(bobCipherText2, alicePrivateKey);
         console.log("768 - aliceSharedSecret2 [" + aliceSharedSecret2 + "]");
         console.log("768 - bobSharedSecret2 [" + bobSharedSecret2 + "]");
-        const result2: number = Utilities.constantTimeCompare(aliceSharedSecret2, bobSharedSecret2);
+        const result2: number = constantTimeCompare(aliceSharedSecret2, bobSharedSecret2);
         if (result2 === 0) {
-            console.log("768 - Alice to Bob Shared Secrets matched!")
+            console.log("768 - Alice to Bob Shared Secrets matched!");
         } else {
-            console.log("768 - Alice to Bob Shared Secrets did not match!")
+            console.log("768 - Alice to Bob Shared Secrets did not match!");
         }
         console.log("768 - ============================================================================");
     });
@@ -853,7 +853,7 @@ describe('Kyber768Service', () => {
             //    console.log("768 - aliceCipherText [" + aliceCipherText + "]");
             //  console.log("768 - aliceSharedSecret [" + aliceSharedSecret + "]");
             if (prevCipherText != null) {
-                const ss1Result: number = Utilities.constantTimeCompare(prevCipherText, aliceCipherText);
+                const ss1Result: number = constantTimeCompare(prevCipherText, aliceCipherText);
                 if (ss1Result === 0) {
                     console.log("768 - Cipher Text was a DUPLICATE!");
                     ++fail;
@@ -861,7 +861,7 @@ describe('Kyber768Service', () => {
                     console.log("768 - Cipher Text was not a duplicate!");
                 }
 
-                const ss2Result: number = Utilities.constantTimeCompare(prevSharedSecret, aliceSharedSecret);
+                const ss2Result: number = constantTimeCompare(prevSharedSecret, aliceSharedSecret);
                 if (ss2Result === 0) {
                     console.log("768 - Shared Secret DUPLICATE!");
                     ++fail;

@@ -1,6 +1,6 @@
 import { Buffer } from "buffer";
 import { SHA3, SHAKE } from "sha3";
-import { Utilities } from "../lib/utilities";
+import { constantTimeCompare, intToByte, randomIntUpTo } from "../lib/utilities";
 import { Indcpa } from "../lib/indcpa";
 
 /**
@@ -144,7 +144,7 @@ export abstract class KyberService {
         // read 32 random values (0-255) into a 32 byte array
         const rnd = Buffer.alloc(KyberService.paramsSymBytes);
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
-            rnd[i] = Utilities.nextInt(256);
+            rnd[i] = randomIntUpTo(256);
         }
 
         // concatenate to form IND-CCA2 private key: sk + pk + h(pk) + rnd
@@ -174,7 +174,7 @@ export abstract class KyberService {
         // random 32 bytes
         const m = Buffer.alloc(KyberService.paramsSymBytes);
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
-            m[i] = Utilities.nextInt(256);
+            m[i] = randomIntUpTo(256);
         }
 
         // hash m with SHA3-256
@@ -296,7 +296,7 @@ export abstract class KyberService {
         // IND-CPA encrypt
         const cmp = this.indcpa.indcpaEncrypt(indcpaPublicKey, m, kr2);
         // compare c and cmp to verify the generated shared secret
-        const fail = Utilities.constantTimeCompare(cipherText, cmp);
+        const fail = constantTimeCompare(cipherText, cmp);
         // hash c with SHA3-256
         const md = new SHA3(256);
         md.update(Buffer.from(cipherText));
@@ -314,7 +314,7 @@ export abstract class KyberService {
         }
         let index = privateKey.length - KyberService.paramsSymBytes;
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
-            kr[i] = Utilities.intToByte((kr[i]) ^ ((fail & 0xFF) & ((kr[i]) ^ (privateKey[index]))));
+            kr[i] = intToByte((kr[i]) ^ ((fail & 0xFF) & ((kr[i]) ^ (privateKey[index]))));
             index += 1;
         }
         const tempBuf: number[] = [];
