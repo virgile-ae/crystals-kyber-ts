@@ -1,8 +1,8 @@
-import {Buffer} from "buffer";
-import {Utilities} from "./utilities";
-import {SHA3, SHAKE} from "sha3";
-import {Poly} from "./poly";
-import {KyberService} from "../services/kyber.service";
+import { Buffer } from "buffer";
+import { Utilities } from "./utilities";
+import { SHA3, SHAKE } from "sha3";
+import { Poly } from "./poly";
+import { KyberService } from "../services/kyber.service";
 
 export class Indcpa {
     public poly: Poly;
@@ -120,14 +120,14 @@ export class Indcpa {
         }
         let seed;
         switch (this.paramsK) {
-            case 2:
-                seed = publicKey.slice(KyberService.paramsPolyvecBytesK512, KyberService.paramsIndcpaPublicKeyBytesK512);
-                break;
-            case 3:
-                seed = publicKey.slice(KyberService.paramsPolyvecBytesK768, KyberService.paramsIndcpaPublicKeyBytesK768);
-                break;
-            default:
-                seed = publicKey.slice(KyberService.paramsPolyvecBytesK1024, KyberService.paramsIndcpaPublicKeyBytesK1024);
+        case 2:
+            seed = publicKey.slice(KyberService.paramsPolyvecBytesK512, KyberService.paramsIndcpaPublicKeyBytesK512);
+            break;
+        case 3:
+            seed = publicKey.slice(KyberService.paramsPolyvecBytesK768, KyberService.paramsIndcpaPublicKeyBytesK768);
+            break;
+        default:
+            seed = publicKey.slice(KyberService.paramsPolyvecBytesK1024, KyberService.paramsIndcpaPublicKeyBytesK1024);
         }
         const at = this.generateMatrix(seed, true);
         const sp: number[][] = []; // this.paramsK
@@ -180,17 +180,17 @@ export class Indcpa {
         let bpEndIndex: number;
         let vEndIndex: number;
         switch (this.paramsK) {
-            case 2:
-                bpEndIndex = KyberService.paramsPolyvecCompressedBytesK512;
-                vEndIndex = bpEndIndex + KyberService.paramsPolyCompressedBytesK512;
-                break;
-            case 3:
-                bpEndIndex = KyberService.paramsPolyvecCompressedBytesK768;
-                vEndIndex = bpEndIndex + KyberService.paramsPolyCompressedBytesK768;
-                break;
-            default:
-                bpEndIndex = KyberService.paramsPolyvecCompressedBytesK1024;
-                vEndIndex = bpEndIndex + KyberService.paramsPolyCompressedBytesK1024;
+        case 2:
+            bpEndIndex = KyberService.paramsPolyvecCompressedBytesK512;
+            vEndIndex = bpEndIndex + KyberService.paramsPolyCompressedBytesK512;
+            break;
+        case 3:
+            bpEndIndex = KyberService.paramsPolyvecCompressedBytesK768;
+            vEndIndex = bpEndIndex + KyberService.paramsPolyCompressedBytesK768;
+            break;
+        default:
+            bpEndIndex = KyberService.paramsPolyvecCompressedBytesK1024;
+            vEndIndex = bpEndIndex + KyberService.paramsPolyCompressedBytesK1024;
         }
 
         let bp = this.poly.decompressPolyVector(packedCipherText.slice(0, bpEndIndex));
@@ -235,7 +235,7 @@ export class Indcpa {
                 const buffer1 = Buffer.from(seed);
                 const buffer2 = Buffer.from(transpose);
                 xof.update(buffer1).update(buffer2);
-                let outputString = xof.digest({format: "binary", buffer: Buffer.alloc(672)});
+                let outputString = xof.digest({ format: "binary", buffer: Buffer.alloc(672) });
                 let output = Buffer.alloc(outputString.length);
                 output.fill(outputString);
                 // run rejection sampling on the output from above

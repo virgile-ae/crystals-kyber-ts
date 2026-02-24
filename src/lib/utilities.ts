@@ -1,4 +1,4 @@
-import {alea as aleaRandom} from 'alea-generator';
+import { alea as aleaRandom } from 'alea-generator';
 
 /**
  * Common math and byte functions

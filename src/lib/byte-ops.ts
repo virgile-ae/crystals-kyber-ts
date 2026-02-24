@@ -1,15 +1,13 @@
-import {Buffer} from "buffer";
-import {Utilities} from "./utilities";
-import {KyberService} from "../services/kyber.service";
+import { Buffer } from "buffer";
+import { Utilities } from "./utilities";
+import { KyberService } from "../services/kyber.service";
 
 /**
  * Utility class for byte operations
  */
 export class ByteOps {
 
-    constructor(public paramsK: number) {
-
-    }
+    constructor(public paramsK: number) { }
 
     /**
      * Generate a polynomial with coefficients distributed according to a
@@ -26,30 +24,30 @@ export class ByteOps {
         let a, b;
         let r = new Array(KyberService.paramsPolyBytes).fill(0);
         switch (paramsK) {
-            case 2:
-                for (let i = 0; i < KyberService.paramsN / 4; i++) {
-                    t = this.convertByteTo24BitUnsignedInt(buf.slice(3 * i, buf.length));
-                    d = t & 0x00249249;
-                    d = d + ((t >> 1) & 0x00249249);
-                    d = d + ((t >> 2) & 0x00249249);
-                    for (let j = 0; j < 4; j++) {
-                        a = Utilities.int16((d >> (6 * j + 0)) & 0x7);
-                        b = Utilities.int16((d >> (6 * j + KyberService.paramsETAK512)) & 0x7);
-                        r[4 * i + j] = a - b;
-                    }
+        case 2:
+            for (let i = 0; i < KyberService.paramsN / 4; i++) {
+                t = this.convertByteTo24BitUnsignedInt(buf.slice(3 * i, buf.length));
+                d = t & 0x00249249;
+                d = d + ((t >> 1) & 0x00249249);
+                d = d + ((t >> 2) & 0x00249249);
+                for (let j = 0; j < 4; j++) {
+                    a = Utilities.int16((d >> (6 * j + 0)) & 0x7);
+                    b = Utilities.int16((d >> (6 * j + KyberService.paramsETAK512)) & 0x7);
+                    r[4 * i + j] = a - b;
                 }
-                break;
-            default:
-                for (let i = 0; i < KyberService.paramsN / 8; i++) {
-                    t = (this.convertByteTo32BitUnsignedInt(buf.slice(4 * i, buf.length)));
-                    d = (t & 0x55555555);
-                    d = d + (((t >> 1) & 0x55555555) >>> 0);
-                    for (let j = 0; j < 8; j++) {
-                        a = Utilities.int16((((d >> (4 * j + 0))) & 0x3));
-                        b = Utilities.int16((((d >> (4 * j + KyberService.paramsETAK768K1024))) & 0x3));
-                        r[8 * i + j] = a - b;
-                    }
+            }
+            break;
+        default:
+            for (let i = 0; i < KyberService.paramsN / 8; i++) {
+                t = (this.convertByteTo32BitUnsignedInt(buf.slice(4 * i, buf.length)));
+                d = (t & 0x55555555);
+                d = d + (((t >> 1) & 0x55555555) >>> 0);
+                for (let j = 0; j < 8; j++) {
+                    a = Utilities.int16((((d >> (4 * j + 0))) & 0x3));
+                    b = Utilities.int16((((d >> (4 * j + KyberService.paramsETAK768K1024))) & 0x3));
+                    r[8 * i + j] = a - b;
                 }
+            }
         }
         return r;
     }

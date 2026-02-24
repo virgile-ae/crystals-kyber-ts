@@ -1,4 +1,4 @@
-import {KyberService} from "./kyber.service";
+import { KyberService } from "./kyber.service";
 
 /**
  * Kyber KEM 768 implementation

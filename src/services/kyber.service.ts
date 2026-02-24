@@ -1,7 +1,7 @@
-import {Buffer} from "buffer";
-import {SHA3, SHAKE} from "sha3";
-import {Utilities} from "../lib/utilities";
-import {Indcpa} from "../lib/indcpa";
+import { Buffer } from "buffer";
+import { SHA3, SHAKE } from "sha3";
+import { Utilities } from "../lib/utilities";
+import { Indcpa } from "../lib/indcpa";
 
 /**
  * Abstract class for Kyber implementation
@@ -58,55 +58,55 @@ export abstract class KyberService {
     public static paramsIndcpaSecretKeyBytesK768 = 3 * KyberService.paramsPolyBytes;
     public static paramsIndcpaSecretKeyBytesK1024 = 4 * KyberService.paramsPolyBytes;
 
-// Kyber512SKBytes is a constant representing the byte length of private keys in Kyber-512
+    // Kyber512SKBytes is a constant representing the byte length of private keys in Kyber-512
     public static Kyber512SKBytes = KyberService.paramsPolyvecBytesK512 + ((KyberService.paramsPolyvecBytesK512 + KyberService.paramsSymBytes) + 2 * KyberService.paramsSymBytes);
 
-// Kyber768SKBytes is a constant representing the byte length of private keys in Kyber-768
+    // Kyber768SKBytes is a constant representing the byte length of private keys in Kyber-768
     public static Kyber768SKBytes = KyberService.paramsPolyvecBytesK768 + ((KyberService.paramsPolyvecBytesK768 + KyberService.paramsSymBytes) + 2 * KyberService.paramsSymBytes);
 
-// Kyber1024SKBytes is a constant representing the byte length of private keys in Kyber-1024
+    // Kyber1024SKBytes is a constant representing the byte length of private keys in Kyber-1024
     public static Kyber1024SKBytes = KyberService.paramsPolyvecBytesK1024 + ((KyberService.paramsPolyvecBytesK1024 + KyberService.paramsSymBytes) + 2 * KyberService.paramsSymBytes);
 
-// Kyber512PKBytes is a constant representing the byte length of public keys in Kyber-512
+    // Kyber512PKBytes is a constant representing the byte length of public keys in Kyber-512
     public static Kyber512PKBytes = KyberService.paramsPolyvecBytesK512 + KyberService.paramsSymBytes;
 
-// Kyber768PKBytes is a constant representing the byte length of public keys in Kyber-768
+    // Kyber768PKBytes is a constant representing the byte length of public keys in Kyber-768
     public static Kyber768PKBytes = KyberService.paramsPolyvecBytesK768 + KyberService.paramsSymBytes;
 
-// Kyber1024PKBytes is a constant representing the byte length of public keys in Kyber-1024
+    // Kyber1024PKBytes is a constant representing the byte length of public keys in Kyber-1024
     public static Kyber1024PKBytes = KyberService.paramsPolyvecBytesK1024 + KyberService.paramsSymBytes;
 
-// KyberEncoded512PKBytes is a constant representing the byte length of encoded public keys in Kyber-512
+    // KyberEncoded512PKBytes is a constant representing the byte length of encoded public keys in Kyber-512
     public static KyberEncoded512PKBytes = 967;
 
-// KyberEncoded768PKBytes is a constant representing the byte length of encoded public keys in Kyber-768
+    // KyberEncoded768PKBytes is a constant representing the byte length of encoded public keys in Kyber-768
     public static KyberEncoded768PKBytes = 1351;
 
-// KyberEncoded1024PKBytes is a constant representing the byte length of encoded public keys in Kyber-1024
+    // KyberEncoded1024PKBytes is a constant representing the byte length of encoded public keys in Kyber-1024
     public static KyberEncoded1024PKBytes = 1735;
 
-// Kyber512CTBytes is a constant representing the byte length of ciphertexts in Kyber-512
+    // Kyber512CTBytes is a constant representing the byte length of ciphertexts in Kyber-512
     public static Kyber512CTBytes = KyberService.paramsPolyvecCompressedBytesK512 + KyberService.paramsPolyCompressedBytesK512;
 
-// Kyber768CTBytes is a constant representing the byte length of ciphertexts in Kyber-768
+    // Kyber768CTBytes is a constant representing the byte length of ciphertexts in Kyber-768
     public static Kyber768CTBytes = KyberService.paramsPolyvecCompressedBytesK768 + KyberService.paramsPolyCompressedBytesK768;
 
-// Kyber1024CTBytes is a constant representing the byte length of ciphertexts in Kyber-1024
+    // Kyber1024CTBytes is a constant representing the byte length of ciphertexts in Kyber-1024
     public static Kyber1024CTBytes = KyberService.paramsPolyvecCompressedBytesK1024 + KyberService.paramsPolyCompressedBytesK1024;
 
-// KyberEncoded512CTBytes is a constant representing the byte length of Encoded ciphertexts in Kyber-512
+    // KyberEncoded512CTBytes is a constant representing the byte length of Encoded ciphertexts in Kyber-512
     public static KyberEncoded512CTBytes = 935;
 
-// KyberEncoded768CTBytes is a constant representing the byte length of Encoded ciphertexts in Kyber-768
+    // KyberEncoded768CTBytes is a constant representing the byte length of Encoded ciphertexts in Kyber-768
     public static KyberEncoded768CTBytes = 1255;
 
-// KyberEncoded1024CTBytes is a constant representing the byte length of Encoded ciphertexts in Kyber-1024
+    // KyberEncoded1024CTBytes is a constant representing the byte length of Encoded ciphertexts in Kyber-1024
     public static KyberEncoded1024CTBytes = 1735;
 
-// KyberSSBytes is a constant representing the byte length of shared secrets in Kyber
+    // KyberSSBytes is a constant representing the byte length of shared secrets in Kyber
     public static KyberSSBytes = 32;
 
-// KyberEncodedSSBytes is a constant representing the byte length of encoded shared secrets in Kyber
+    // KyberEncodedSSBytes is a constant representing the byte length of encoded shared secrets in Kyber
     public static KyberEncodedSSBytes = 193;
 
     /**
@@ -246,27 +246,27 @@ export abstract class KyberService {
         let startIndex = 0;
         let endIndex = 0;
         switch (this.paramsK) {
-            case 2:
-                endIndex = KyberService.paramsIndcpaSecretKeyBytesK512;
-                break;
-            case 3:
-                endIndex = KyberService.paramsIndcpaSecretKeyBytesK768;
-                break;
-            default:
-                endIndex = KyberService.paramsIndcpaSecretKeyBytesK1024;
+        case 2:
+            endIndex = KyberService.paramsIndcpaSecretKeyBytesK512;
+            break;
+        case 3:
+            endIndex = KyberService.paramsIndcpaSecretKeyBytesK768;
+            break;
+        default:
+            endIndex = KyberService.paramsIndcpaSecretKeyBytesK1024;
         }
 
         const indcpaPrivateKey = privateKey.slice(startIndex, endIndex); // indcpa secret key
         startIndex = endIndex;
         switch (this.paramsK) {
-            case 2:
-                endIndex += KyberService.paramsIndcpaPublicKeyBytesK512;
-                break;
-            case 3:
-                endIndex += KyberService.paramsIndcpaPublicKeyBytesK768;
-                break;
-            default:
-                endIndex += KyberService.paramsIndcpaPublicKeyBytesK1024;
+        case 2:
+            endIndex += KyberService.paramsIndcpaPublicKeyBytesK512;
+            break;
+        case 3:
+            endIndex += KyberService.paramsIndcpaPublicKeyBytesK768;
+            break;
+        default:
+            endIndex += KyberService.paramsIndcpaPublicKeyBytesK1024;
         }
         const indcpaPublicKey = privateKey.slice(startIndex, endIndex); // indcpa public key
         startIndex = endIndex;
@@ -303,14 +303,14 @@ export abstract class KyberService {
         const krh = md.digest();
         let kyberSKBytes = 0;
         switch (this.paramsK) {
-            case 2:
-                kyberSKBytes = KyberService.Kyber512SKBytes;
-                break;
-            case 3:
-                kyberSKBytes = KyberService.Kyber768SKBytes;
-                break;
-            default:
-                kyberSKBytes = KyberService.Kyber1024SKBytes;
+        case 2:
+            kyberSKBytes = KyberService.Kyber512SKBytes;
+            break;
+        case 3:
+            kyberSKBytes = KyberService.Kyber768SKBytes;
+            break;
+        default:
+            kyberSKBytes = KyberService.Kyber1024SKBytes;
         }
         let index = privateKey.length - KyberService.paramsSymBytes;
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {

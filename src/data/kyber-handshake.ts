@@ -1,4 +1,4 @@
-import {KyberService} from "../services/kyber.service";
+import { KyberService } from "../services/kyber.service";
 
 /**
  * Kyber Handshake
