@@ -13,9 +13,7 @@ export class KyberHandshake {
     private _remoteCipherText: number[] = [];
 
     constructor(private kyberService: KyberService) {
-        const kyberKeys: number[][] = this.kyberService.generateKyberKeys();
-        this._publicKey = kyberKeys[0];
-        this._privateKey = kyberKeys[1];
+        [this._publicKey, this._privateKey] = this.kyberService.generateKyberKeys();
     }
 
     /**
@@ -26,9 +24,7 @@ export class KyberHandshake {
      */
     public generateCipherTextAndSharedSecret(remotePublicKey: number[]): number[] {
         this.remotePublicKey = remotePublicKey;
-        const sharedSecretCipher: number[][] = this.kyberService.encrypt(remotePublicKey);
-        this.cipherText = sharedSecretCipher[0];
-        this.sharedSecret = sharedSecretCipher[1];
+        [this.cipherText, this.sharedSecret] = this.kyberService.encrypt(remotePublicKey);
         return this.cipherText;
     }
 
