@@ -73,12 +73,10 @@ export class Poly {
      * @return
      */
     public polyVectorFromBytes(a: number[]): number[][] {
-        let r: number[][] = [];
-        let start;
-        let end;
+        const r = new Array<number[]>(this.paramsK);
         for (let i = 0; i < this.paramsK; i++) {
-            start = (i * KyberService.paramsPolyBytes);
-            end = (i + 1) * KyberService.paramsPolyBytes;
+            const start = (i * KyberService.paramsPolyBytes);
+            const end = (i + 1) * KyberService.paramsPolyBytes;
             r[i] = this.polyFromBytes(a.slice(start, end));
         }
         return r;
@@ -90,14 +88,13 @@ export class Poly {
      * @param a
      * @return
      */
-    public polyToBytes(a: Array<number>) {
-        let t0, t1;
-        let r: number[] = [];
-        let a2 = this.polyConditionalSubQ(a);
+    public polyToBytes(a: number[]): number[] {
+        const r = new Array<number>(KyberService.paramsPolyBytes);
+        const a2 = this.polyConditionalSubQ(a);
         for (let i = 0; i < KyberService.paramsN / 2; i++) {
-            t0 = uint16(a2[2 * i]);
-            t1 = uint16(a2[2 * i + 1]);
-            r[3 * i + 0] = byte(t0 >> 0);
+            const t0 = uint16(a2[2 * i]);
+            const t1 = uint16(a2[2 * i + 1]);
+            r[3 * i] = byte(t0);
             r[3 * i + 1] = byte(t0 >> 8) | byte(t1 << 4);
             r[3 * i + 2] = byte(t1 >> 4);
         }
@@ -108,13 +105,10 @@ export class Poly {
      * Check the 0xFFF
      * @param a
      */
-    public polyFromBytes(a: number[]) {
-        let r: number[] = [];
-        for (let i = 0; i < KyberService.paramsPolyBytes; i++) {
-            r[i] = 0;
-        }
+    public polyFromBytes(a: number[]): number[] {
+        const r = new Array<number>(KyberService.paramsPolyBytes);
         for (let i = 0; i < KyberService.paramsN / 2; i++) {
-            r[2 * i] = int16(((uint16(a[3 * i + 0]) >> 0) | (uint16(a[3 * i + 1]) << 8)) & 0xFFF);
+            r[2 * i] = int16((uint16(a[3 * i]) | (uint16(a[3 * i + 1]) << 8)) & 0xFFF);
             r[2 * i + 1] = int16(((uint16(a[3 * i + 1]) >> 4) | (uint16(a[3 * i + 2]) << 4)) & 0xFFF);
         }
         return r;
@@ -126,35 +120,29 @@ export class Poly {
      * @param a
      * @return
      */
-    public polyToMsg(a: Array<number>): number[] {
-        const msg: number[] = []; // 32
-        let t;
+    public polyToMsg(a: number[]): number[] {
+        const message = new Array<number>(32).fill(0);
         const a2 = this.polyConditionalSubQ(a);
         for (let i = 0; i < KyberService.paramsN / 8; i++) {
-            msg[i] = 0;
             for (let j = 0; j < 8; j++) {
-                t = (((uint16(a2[8 * i + j]) << 1) + uint16(KyberService.paramsQ / 2)) / uint16(KyberService.paramsQ)) & 1;
-                msg[i] |= byte(t << j);
+                const t = (((uint16(a2[8 * i + j]) << 1) + uint16(KyberService.paramsQ / 2)) / uint16(KyberService.paramsQ)) & 1;
+                message[i] |= byte(t << j);
             }
         }
-        return msg;
+        return message;
     }
 
     /**
      * Convert a 32-byte message to a polynomial
      *
-     * @param msg
+     * @param message
      * @return
      */
-    public polyFromData(msg: number[]) {
-        let r: number[] = [];
-        for (let i = 0; i < KyberService.paramsPolyBytes; ++i) {
-            r[i] = 0;
-        }
-        let mask;
+    public polyFromData(message: number[]): number[] {
+        const r = new Array<number>(KyberService.paramsPolyBytes).fill(0);
         for (let i = 0; i < KyberService.paramsN / 8; i++) {
             for (let j = 0; j < 8; j++) {
-                mask = -1 * int16((msg[i] >> j) & 1);
+                const mask = -int16((message[i] >> j) & 1);
                 r[8 * i + j] = mask & int16((KyberService.paramsQ + 1) / 2);
             }
         }
@@ -171,16 +159,11 @@ export class Poly {
      * @param paramsK
      * @return
      */
-    public getNoisePoly(seed: number[], nonce: number, paramsK: number) {
-        let l;
-        switch (paramsK) {
-        case 2:
-            l = KyberService.paramsETAK512 * KyberService.paramsN / 4;
-            break;
-        default:
-            l = KyberService.paramsETAK768K1024 * KyberService.paramsN / 4;
-        }
-        let p = this.generatePRFByteArray(l, seed, nonce);
+    public getNoisePoly(seed: number[], nonce: number, paramsK: number): number[] {
+        const l = paramsK === 2 ?
+            KyberService.paramsETAK512 * KyberService.paramsN / 4 :
+            KyberService.paramsETAK768K1024 * KyberService.paramsN / 4;
+        const p = this.generatePRFByteArray(l, seed, nonce);
         return generateCBDPoly(p, paramsK);
     }
 
@@ -194,14 +177,10 @@ export class Poly {
      * @return
      */
     public generatePRFByteArray(l: number, key: number[], nonce: number): Buffer {
-        const nonce_arr: number[] = []; // 1
-        nonce_arr[0] = nonce;
-        const hash = new SHAKE(256);
-        hash.reset();
-        const buffer1 = Buffer.from(key);
-        const buffer2 = Buffer.from(nonce_arr);
-        hash.update(buffer1).update(buffer2);
-        const bufString = hash.digest({ format: "binary", buffer: Buffer.alloc(l) }); // 128 long byte array
+        const bufString = new SHAKE(256)
+            .update(Buffer.from(key))
+            .update(Buffer.from([nonce]))
+            .digest({ format: "binary", buffer: Buffer.alloc(l) });
         const buf = Buffer.alloc(bufString.length);
         for (let i = 0; i < bufString.length; ++i) {
             buf[i] = +bufString[i];
@@ -222,15 +201,12 @@ export class Poly {
     public ntt(r: number[]): number[] {
         let j = 0;
         let k = 1;
-        let zeta;
-        let t;
         for (let l = 128; l >= 2; l >>= 1) {
-            // 0,
             for (let start = 0; start < 256; start = j + l) {
-                zeta = KyberService.nttZetas[k];
+                const zeta = KyberService.nttZetas[k];
                 k++;
                 for (j = start; j < start + l; j++) {
-                    t = modQMulMont(zeta, r[j + l]); // t is mod q
+                    const t = modQMulMont(zeta, r[j + l]); // t is mod q
                     r[j + l] = int16(r[j] - t);
                     r[j] = int16(r[j] + t);
                 }
@@ -245,7 +221,7 @@ export class Poly {
      * @param r
      * @return
      */
-    public polyReduce(r: Array<number>) {
+    public polyReduce(r: number[]): number[] {
         for (let i = 0; i < KyberService.paramsN; i++) {
             r[i] = barrettReduce(r[i]);
         }
@@ -259,7 +235,7 @@ export class Poly {
      * @param polyR
      * @return
      */
-    public polyToMont(r: Array<number>) {
+    public polyToMont(r: number[]): number[] {
         for (let i = 0; i < KyberService.paramsN; i++) {
             r[i] = montgomeryReduce(int32(r[i]) * int32(1353));
         }
@@ -274,11 +250,10 @@ export class Poly {
      * @param b
      * @return
      */
-    public polyVectorPointWiseAccMont(a: number[][], b: number[][]) {
+    public polyVectorPointWiseAccMont(a: number[][], b: number[][]): number[] {
         let r = this.polyBaseMulMont(a[0], b[0]);
-        let t;
         for (let i = 1; i < this.paramsK; i++) {
-            t = this.polyBaseMulMont(a[i], b[i]);
+            const t = this.polyBaseMulMont(a[i], b[i]);
             r = this.polyAdd(r, t);
         }
         return this.polyReduce(r);
@@ -292,20 +267,19 @@ export class Poly {
      * @return
      */
     public polyBaseMulMont(a: number[], b: number[]): number[] {
-        let rx, ry;
         for (let i = 0; i < KyberService.paramsN / 4; i++) {
-            rx = this.nttBaseMuliplier(
-                a[4 * i + 0], a[4 * i + 1],
-                b[4 * i + 0], b[4 * i + 1],
+            const rx = this.nttBaseMuliplier(
+                a[4 * i], a[4 * i + 1],
+                b[4 * i], b[4 * i + 1],
                 KyberService.nttZetas[64 + i]
             );
-            ry = this.nttBaseMuliplier(
+            const ry = this.nttBaseMuliplier(
                 a[4 * i + 2], a[4 * i + 3],
                 b[4 * i + 2], b[4 * i + 3],
                 -KyberService.nttZetas[64 + i]
             );
 
-            a[4 * i + 0] = rx[0];
+            a[4 * i] = rx[0];
             a[4 * i + 1] = rx[1];
             a[4 * i + 2] = ry[0];
             a[4 * i + 3] = ry[1];
@@ -323,14 +297,11 @@ export class Poly {
      * @param zeta
      * @return
      */
-    public nttBaseMuliplier(a0: number, a1: number, b0: number, b1: number, zeta: number) {
-        let r: number[] = []; // 2
-        r[0] = modQMulMont(a1, b1);
-        r[0] = modQMulMont(r[0], zeta);
-        r[0] = r[0] + modQMulMont(a0, b0);
-        r[1] = modQMulMont(a0, b1);
-        r[1] = r[1] + modQMulMont(a1, b0);
-        return r;
+    public nttBaseMuliplier(a0: number, a1: number, b0: number, b1: number, zeta: number): [number, number] {
+        return [
+            modQMulMont(modQMulMont(a1, b1), zeta) + modQMulMont(a0, b0),
+            modQMulMont(a0, b1) + modQMulMont(a1, b0),
+        ];
     }
 
     /**
@@ -340,7 +311,7 @@ export class Poly {
      * @param b
      * @return
      */
-    public polyVectorAdd(a: number[][], b: number[][]) {
+    public polyVectorAdd(a: number[][], b: number[][]): number[][] {
         for (let i = 0; i < this.paramsK; i++) {
             a[i] = this.polyAdd(a[i], b[i]);
         }
@@ -354,12 +325,8 @@ export class Poly {
      * @param b
      * @return
      */
-    public polyAdd(a: Array<number>, b: Array<number>) {
-        let c: number[] = [];
-        // needs to be 384
-        for (let i = 0; i < a.length; ++i) {
-            c[i] = 0;
-        }
+    public polyAdd(a: number[], b: number[]): number[] {
+        let c = new Array(a.length);
         for (let i = 0; i < KyberService.paramsN; i++) {
             c[i] = a[i] + b[i];
         }
@@ -373,9 +340,9 @@ export class Poly {
      * @param b
      * @return
      */
-    public subtract(a: Array<number>, b: Array<number>) {
+    public subtract(a: number[], b: number[]): number[] {
         for (let i = 0; i < KyberService.paramsN; i++) {
-            a[i] = a[i] - b[i];
+            a[i] -= b[i];
         }
         return a;
     }
@@ -390,17 +357,15 @@ export class Poly {
      * @param r
      * @return
      */
-    public invNTT(r: Array<number>) {
+    public invNTT(r: number[]): number[] {
         let j = 0;
         let k = 0;
-        let zeta;
-        let t;
         for (let l = 2; l <= 128; l <<= 1) {
             for (let start = 0; start < 256; start = j + l) {
-                zeta = KyberService.nttZetasInv[k];
-                k = k + 1;
+                const zeta = KyberService.nttZetasInv[k];
+                k++;
                 for (j = start; j < start + l; j++) {
-                    t = r[j];
+                    const t = r[j];
                     r[j] = barrettReduce(t + r[j + l]);
                     r[j + l] = t - r[j + l];
                     r[j + l] = modQMulMont(zeta, r[j + l]);
@@ -426,42 +391,40 @@ export class Poly {
         let r: number[] = [];
         let t: number[] = [];
 
-        switch (this.paramsK) {
-        case 2:
-        case 3:
+        if (this.paramsK === 2 || this.paramsK === 3) {
             for (let i = 0; i < this.paramsK; i++) {
                 for (let j = 0; j < KyberService.paramsN / 4; j++) {
                     for (let k = 0; k < 4; k++) {
                         t[k] = (((a[i][4 * j + k] << 10) + KyberService.paramsQ / 2) / KyberService.paramsQ) & 0b1111111111;
                     }
-                    r[rr + 0] = byte(t[0] >> 0);
+                    r[rr] = byte(t[0]);
                     r[rr + 1] = byte(byte(t[0] >> 8) | byte(t[1] << 2));
                     r[rr + 2] = byte(byte(t[1] >> 6) | byte(t[2] << 4));
                     r[rr + 3] = byte(byte(t[2] >> 4) | byte(t[3] << 6));
                     r[rr + 4] = byte((t[3] >> 2));
-                    rr = rr + 5;
+                    rr += 5;
                 }
             }
-            break;
-        default:
-            for (let i = 0; i < this.paramsK; i++) {
-                for (let j = 0; j < KyberService.paramsN / 8; j++) {
-                    for (let k = 0; k < 8; k++) {
-                        t[k] = int32((((int32(a[i][8 * j + k]) << 11) + int32(KyberService.paramsQ / 2)) / int32(KyberService.paramsQ)) & 0x7ff);
-                    }
-                    r[rr + 0] = byte((t[0] >> 0));
-                    r[rr + 1] = byte((t[0] >> 8) | (t[1] << 3));
-                    r[rr + 2] = byte((t[1] >> 5) | (t[2] << 6));
-                    r[rr + 3] = byte((t[2] >> 2));
-                    r[rr + 4] = byte((t[2] >> 10) | (t[3] << 1));
-                    r[rr + 5] = byte((t[3] >> 7) | (t[4] << 4));
-                    r[rr + 6] = byte((t[4] >> 4) | (t[5] << 7));
-                    r[rr + 7] = byte((t[5] >> 1));
-                    r[rr + 8] = byte((t[5] >> 9) | (t[6] << 2));
-                    r[rr + 9] = byte((t[6] >> 6) | (t[7] << 5));
-                    r[rr + 10] = byte((t[7] >> 3));
-                    rr = rr + 11;
+            return r;
+        }
+
+        for (let i = 0; i < this.paramsK; i++) {
+            for (let j = 0; j < KyberService.paramsN / 8; j++) {
+                for (let k = 0; k < 8; k++) {
+                    t[k] = int32((((int32(a[i][8 * j + k]) << 11) + int32(KyberService.paramsQ / 2)) / int32(KyberService.paramsQ)) & 0x7ff);
                 }
+                r[rr] = byte(t[0]);
+                r[rr + 1] = byte((t[0] >> 8) | (t[1] << 3));
+                r[rr + 2] = byte((t[1] >> 5) | (t[2] << 6));
+                r[rr + 3] = byte((t[2] >> 2));
+                r[rr + 4] = byte((t[2] >> 10) | (t[3] << 1));
+                r[rr + 5] = byte((t[3] >> 7) | (t[4] << 4));
+                r[rr + 6] = byte((t[4] >> 4) | (t[5] << 7));
+                r[rr + 7] = byte((t[5] >> 1));
+                r[rr + 8] = byte((t[5] >> 9) | (t[6] << 2));
+                r[rr + 9] = byte((t[6] >> 6) | (t[7] << 5));
+                r[rr + 10] = byte((t[7] >> 3));
+                rr += 11;
             }
         }
         return r;
@@ -476,38 +439,38 @@ export class Poly {
     public compressPoly(polyA: number[]): number[] {
         let rr = 0;
         let r: number[] = [];
-        let t: number[] = []; // 8
         const qDiv2 = (KyberService.paramsQ / 2);
-        switch (this.paramsK) {
-        case 2:
-        case 3:
+
+        if (this.paramsK === 2 || this.paramsK === 3) {
             for (let i = 0; i < KyberService.paramsN / 8; i++) {
+                const t = new Array<number>(8);
                 for (let j = 0; j < 8; j++) {
                     const step1: number = int32((polyA[8 * i + j]) << 4);
                     const step2 = int32((step1 + qDiv2) / (KyberService.paramsQ));
                     t[j] = intToByte(step2 & 15);
                 }
-                r[rr + 0] = intToByte(t[0] | (t[1] << 4));
+                r[rr] = intToByte(t[0] | (t[1] << 4));
                 r[rr + 1] = intToByte(t[2] | (t[3] << 4));
                 r[rr + 2] = intToByte(t[4] | (t[5] << 4));
                 r[rr + 3] = intToByte(t[6] | (t[7] << 4));
-                rr = rr + 4;
+                rr += 4;
             }
-            break;
-        default:
-            for (let i = 0; i < KyberService.paramsN / 8; i++) {
-                for (let j = 0; j < 8; j++) {
-                    const step1: number = int32((polyA[(8 * i) + j] << 5));
-                    const step2 = int32((step1 + qDiv2) / (KyberService.paramsQ));
-                    t[j] = intToByte(step2 & 31);
-                }
-                r[rr + 0] = intToByte((t[0] >> 0) | (t[1] << 5));
-                r[rr + 1] = intToByte((t[1] >> 3) | (t[2] << 2) | (t[3] << 7));
-                r[rr + 2] = intToByte((t[3] >> 1) | (t[4] << 4));
-                r[rr + 3] = intToByte((t[4] >> 4) | (t[5] << 1) | (t[6] << 6));
-                r[rr + 4] = intToByte((t[6] >> 2) | (t[7] << 3));
-                rr = rr + 5;
+            return r;
+        }
+
+        for (let i = 0; i < KyberService.paramsN / 8; i++) {
+            const t = new Array<number>(8);
+            for (let j = 0; j < 8; j++) {
+                const step1: number = int32((polyA[(8 * i) + j] << 5));
+                const step2 = int32((step1 + qDiv2) / (KyberService.paramsQ));
+                t[j] = intToByte(step2 & 31);
             }
+            r[rr] = intToByte(t[0] | (t[1] << 5));
+            r[rr + 1] = intToByte((t[1] >> 3) | (t[2] << 2) | (t[3] << 7));
+            r[rr + 2] = intToByte((t[3] >> 1) | (t[4] << 4));
+            r[rr + 3] = intToByte((t[4] >> 4) | (t[5] << 1) | (t[6] << 6));
+            r[rr + 4] = intToByte((t[6] >> 2) | (t[7] << 3));
+            rr += 5;
         }
         return r;
     }
@@ -521,47 +484,47 @@ export class Poly {
      * @param a
      * @return
      */
-    public decompressPolyVector(a: number[]) {
-        const r: number[][] = []; // this.paramsK
+    public decompressPolyVector(a: number[]): number[][] {
+        const r = new Array<number[]>(this.paramsK);
         for (let i = 0; i < this.paramsK; i++) {
             r[i] = [];
         }
         let aa = 0;
-        const t: number[] = []; // 8
-        switch (this.paramsK) {
-        //TESTED
-        case 2:
-        case 3:
+        if (this.paramsK === 2 || this.paramsK === 3) {
             let ctr = 0;
             for (let i = 0; i < this.paramsK; i++) {
                 for (let j = 0; j < (KyberService.paramsN / 4); j++) {
-                    t[0] = (uint16(a[aa + 0]) >> 0) | (uint16(a[aa + 1]) << 8);
-                    t[1] = (uint16(a[aa + 1]) >> 2) | (uint16(a[aa + 2]) << 6);
-                    t[2] = (uint16(a[aa + 2]) >> 4) | (uint16(a[aa + 3]) << 4);
-                    t[3] = (uint16(a[aa + 3]) >> 6) | (uint16(a[aa + 4]) << 2);
-                    aa = aa + 5;
-                    ++ctr;
+                    const t = [
+                        uint16(a[aa]) | (uint16(a[aa + 1]) << 8),
+                        (uint16(a[aa + 1]) >> 2) | (uint16(a[aa + 2]) << 6),
+                        (uint16(a[aa + 2]) >> 4) | (uint16(a[aa + 3]) << 4),
+                        (uint16(a[aa + 3]) >> 6) | (uint16(a[aa + 4]) << 2),
+                    ];
+                    aa += 5;
+                    ctr++;
                     for (let k = 0; k < 4; k++) {
                         r[i][4 * j + k] = (uint32(t[k] & 0x3FF) * KyberService.paramsQ + 512) >> 10;
                     }
                 }
             }
-            break;
-        default:
-            for (let i = 0; i < this.paramsK; i++) {
-                for (let j = 0; j < KyberService.paramsN / 8; j++) {
-                    t[0] = (uint16(a[aa + 0]) >> 0) | (uint16(a[aa + 1]) << 8);
-                    t[1] = (uint16(a[aa + 1]) >> 3) | (uint16(a[aa + 2]) << 5);
-                    t[2] = (uint16(a[aa + 2]) >> 6) | (uint16(a[aa + 3]) << 2) | (uint16(a[aa + 4]) << 10);
-                    t[3] = (uint16(a[aa + 4]) >> 1) | (uint16(a[aa + 5]) << 7);
-                    t[4] = (uint16(a[aa + 5]) >> 4) | (uint16(a[aa + 6]) << 4);
-                    t[5] = (uint16(a[aa + 6]) >> 7) | (uint16(a[aa + 7]) << 1) | (uint16(a[aa + 8]) << 9);
-                    t[6] = (uint16(a[aa + 8]) >> 2) | (uint16(a[aa + 9]) << 6);
-                    t[7] = (uint16(a[aa + 9]) >> 5) | (uint16(a[aa + 10]) << 3);
-                    aa = aa + 11;
-                    for (let k = 0; k < 8; k++) {
-                        r[i][8 * j + k] = (uint32(t[k] & 0x7FF) * KyberService.paramsQ + 1024) >> 11;
-                    }
+            return r;
+        }
+
+        for (let i = 0; i < this.paramsK; i++) {
+            for (let j = 0; j < KyberService.paramsN / 8; j++) {
+                const t = [
+                    uint16(a[aa]) | (uint16(a[aa + 1]) << 8),
+                    (uint16(a[aa + 1]) >> 3) | (uint16(a[aa + 2]) << 5),
+                    (uint16(a[aa + 2]) >> 6) | (uint16(a[aa + 3]) << 2) | (uint16(a[aa + 4]) << 10),
+                    (uint16(a[aa + 4]) >> 1) | (uint16(a[aa + 5]) << 7),
+                    (uint16(a[aa + 5]) >> 4) | (uint16(a[aa + 6]) << 4),
+                    (uint16(a[aa + 6]) >> 7) | (uint16(a[aa + 7]) << 1) | (uint16(a[aa + 8]) << 9),
+                    (uint16(a[aa + 8]) >> 2) | (uint16(a[aa + 9]) << 6),
+                    (uint16(a[aa + 9]) >> 5) | (uint16(a[aa + 10]) << 3)
+                ];
+                aa += 11;
+                for (let k = 0; k < 8; k++) {
+                    r[i][8 * j + k] = (uint32(t[k] & 0x7FF) * KyberService.paramsQ + 1024) >> 11;
                 }
             }
         }
@@ -586,10 +549,10 @@ export class Poly {
      * @param r
      * @return
      */
-    public polyConditionalSubQ(r: Array<number>) {
+    public polyConditionalSubQ(r: number[]): number[] {
         for (let i = 0; i < KyberService.paramsN; i++) {
-            r[i] = r[i] - KyberService.paramsQ;
-            r[i] = r[i] + ((r[i] >> 31) & KyberService.paramsQ);
+            r[i] -= KyberService.paramsQ;
+            r[i] += (r[i] >> 31) & KyberService.paramsQ;
         }
         return r;
     }
@@ -603,34 +566,32 @@ export class Poly {
      * @param a
      * @return
      */
-    public decompressPoly(a: number[]) {
-        let r: number[] = []; // 384
-        let t: number[] = []; // 8
+    public decompressPoly(a: number[]): number[] {
+        let r = new Array<number>(384);
         let aa = 0;
-        switch (this.paramsK) {
-        case 2:
-        case 3:
-            // TESTED
+        if (this.paramsK === 2 || this.paramsK === 3) {
             for (let i = 0; i < KyberService.paramsN / 2; i++) {
-                r[2 * i + 0] = int16((((byte(a[aa]) & 15) * uint32(KyberService.paramsQ)) + 8) >> 4);
+                r[2 * i] = int16((((byte(a[aa]) & 15) * uint32(KyberService.paramsQ)) + 8) >> 4);
                 r[2 * i + 1] = int16((((byte(a[aa]) >> 4) * uint32(KyberService.paramsQ)) + 8) >> 4);
-                aa = aa + 1;
+                aa++;
             }
-            break;
-        default:
-            for (let i = 0; i < KyberService.paramsN / 8; i++) {
-                t[0] = (a[aa + 0] >> 0);
-                t[1] = byte(a[aa + 0] >> 5) | byte((a[aa + 1] << 3));
-                t[2] = (a[aa + 1] >> 2);
-                t[3] = byte((a[aa + 1] >> 7)) | byte((a[aa + 2] << 1));
-                t[4] = byte((a[aa + 2] >> 4)) | byte((a[aa + 3] << 4));
-                t[5] = (a[aa + 3] >> 1);
-                t[6] = byte((a[aa + 3] >> 6)) | byte((a[aa + 4] << 2));
-                t[7] = (a[aa + 4] >> 3);
-                aa = aa + 5;
-                for (let j = 0; j < 8; j++) {
-                    r[8 * i + j] = int16(((byte(t[j] & 31) * uint32(KyberService.paramsQ)) + 16) >> 5);
-                }
+            return r;
+        }
+
+        for (let i = 0; i < KyberService.paramsN / 8; i++) {
+            const t = [
+                a[aa],
+                byte(a[aa] >> 5) | byte((a[aa + 1] << 3)),
+                a[aa + 1] >> 2,
+                byte((a[aa + 1] >> 7)) | byte((a[aa + 2] << 1)),
+                byte((a[aa + 2] >> 4)) | byte((a[aa + 3] << 4)),
+                a[aa + 3] >> 1,
+                byte((a[aa + 3] >> 6)) | byte((a[aa + 4] << 2)),
+                a[aa + 4] >> 3
+            ];
+            aa += 5;
+            for (let j = 0; j < 8; j++) {
+                r[8 * i + j] = int16((byte(t[j] & 31) * uint32(KyberService.paramsQ) + 16) >> 5);
             }
         }
         return r;
