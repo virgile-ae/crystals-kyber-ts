@@ -125,43 +125,21 @@ export abstract class KyberService {
     /**
      * Generate local Kyber Keys
      */
-    public generateKyberKeys(): number[][] {
-        // IND-CPA keypair
-        const indcpakeys = this.indcpa.indcpaKeyGen();
+    public generateKyberKeys(): [number[], number[]] {
+        const [pk, sk] = this.indcpa.indcpaKeyGen();
 
-        const pk = indcpakeys[0];
-        const sk = indcpakeys[1];
+        const pkHash = new SHA3(256).update(Buffer.from(pk)).digest();
 
-        // FO transform to make IND-CCA2
-
-        // get hash of pk
-        const buffer1 = Buffer.from(pk);
-        const hash1 = new SHA3(256);
-
-        hash1.update(buffer1);
-        let pkh = hash1.digest();
-
-        // read 32 random values (0-255) into a 32 byte array
         const rnd = Buffer.alloc(KyberService.paramsSymBytes);
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
             rnd[i] = randomIntUpTo(256);
         }
 
-        // concatenate to form IND-CCA2 private key: sk + pk + h(pk) + rnd
-        for (let i = 0; i < pk.length; i++) {
-            sk.push(pk[i]);
-        }
-        for (let i = 0; i < pkh.length; i++) {
-            sk.push(pkh[i]);
-        }
-        for (let i = 0; i < rnd.length; i++) {
-            sk.push(rnd[i]);
-        }
+        sk.push(...pk);
+        sk.push(...pkHash);
+        sk.push(...rnd);
 
-        const keys: number[][] = []; // 2
-        keys[0] = pk;
-        keys[1] = sk;
-        return keys;
+        return [pk, sk];
     }
 
     /**
@@ -170,69 +148,31 @@ export abstract class KyberService {
      * @param publicKey
      */
     public encrypt(publicKey: number[]): number[][] {
-
-        // random 32 bytes
-        const m = Buffer.alloc(KyberService.paramsSymBytes);
+        const rnd = Buffer.alloc(KyberService.paramsSymBytes);
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
-            m[i] = randomIntUpTo(256);
+            rnd[i] = randomIntUpTo(256);
         }
 
-        // hash m with SHA3-256
-        const buffer1 = Buffer.from(m);
-        const hash1 = new SHA3(256);
-        hash1.update(buffer1);
-        const mhBuf = hash1.digest();
-        const mh: number[] = [];
-        for (const val of mhBuf) {
-            mh.push(val);
-        }
+        const rndHashBuffer = new SHA3(256).update(rnd).digest();
+        const rndHash = [...rndHashBuffer];
 
-        // hash pk with SHA3-256
-        const buffer2 = Buffer.from(publicKey);
-        const hash2 = new SHA3(256);
-        hash2.update(buffer2);
-        let pkh = hash2.digest();
+        const pkh = new SHA3(256).update(Buffer.from(publicKey)).digest();
 
-        // hash mh and pkh with SHA3-512
-        const buffer3 = Buffer.from(mh);
-        const buffer4 = Buffer.from(pkh);
-        const hash3 = new SHA3(512);
-        hash3.update(buffer3).update(buffer4);
-        const kr = hash3.digest();
-        const kr1 = kr.slice(0, KyberService.paramsSymBytes);
-        const kr2Buf = kr.slice(KyberService.paramsSymBytes, kr.length);
+        const kr = new SHA3(512).update(rndHashBuffer).update(pkh).digest();
+        const kr1Buffer = kr.slice(0, KyberService.paramsSymBytes);
+        const kr2Buffer = kr.slice(KyberService.paramsSymBytes, kr.length);
+        const kr2 = [...kr2Buffer];
 
-        const kr2: number[] = [];
-        for (const num of kr2Buf) {
-            kr2.push(num);
-        }
+        const cipherText = this.indcpa.indcpaEncrypt(publicKey, rndHash, kr2);
+        const cipherTextHash = new SHA3(256).update(Buffer.from(cipherText)).digest();
 
-        // generate ciphertext c
-        const cipherText = this.indcpa.indcpaEncrypt(publicKey, mh, kr2);
+        const sharedSecretBuffer = new SHAKE(256)
+            .update(kr1Buffer)
+            .update(cipherTextHash)
+            .digest();
+        const sharedSecret = [...sharedSecretBuffer];
 
-        // hash ciphertext with SHA3-256
-        const buffer5 = Buffer.from(cipherText);
-        const hash4 = new SHA3(256);
-        hash4.update(buffer5);
-        let ch = hash4.digest();
-
-        // hash kr1 and ch with SHAKE-256
-        const buffer6 = Buffer.from(kr1);
-        const buffer7 = Buffer.from(ch);
-        const hash5 = new SHAKE(256);
-        hash5.update(buffer6).update(buffer7);
-        const ssBuf = hash5.digest();
-
-        // output (c, ss)
-        const result: number[][] = []; // 2
-        result[0] = cipherText;
-        const sharedSecret: number[] = [];
-        for (let i = 0; i < KyberService.paramsSymBytes; ++i) {
-            sharedSecret[i] = ssBuf[i];
-        }
-        result[1] = sharedSecret;
-
-        return result;
+        return [cipherText, sharedSecret];
     }
 
     /**
@@ -242,103 +182,71 @@ export abstract class KyberService {
      * @param privateKey
      */
     public decrypt(cipherText: number[], privateKey: number[]): number[] {
-        // extract sk, pk, pkh and z
         let startIndex = 0;
         let endIndex = 0;
-        switch (this.paramsK) {
-        case 2:
+        if (this.paramsK === 2) {
             endIndex = KyberService.paramsIndcpaSecretKeyBytesK512;
-            break;
-        case 3:
+        } else if (this.paramsK === 3) {
             endIndex = KyberService.paramsIndcpaSecretKeyBytesK768;
-            break;
-        default:
+        } else {
             endIndex = KyberService.paramsIndcpaSecretKeyBytesK1024;
         }
 
-        const indcpaPrivateKey = privateKey.slice(startIndex, endIndex); // indcpa secret key
+        const indcpaPrivateKey = privateKey.slice(startIndex, endIndex);
         startIndex = endIndex;
-        switch (this.paramsK) {
-        case 2:
+        if (this.paramsK === 2) {
             endIndex += KyberService.paramsIndcpaPublicKeyBytesK512;
-            break;
-        case 3:
+        } else if (this.paramsK === 3) {
             endIndex += KyberService.paramsIndcpaPublicKeyBytesK768;
-            break;
-        default:
+        } else {
             endIndex += KyberService.paramsIndcpaPublicKeyBytesK1024;
         }
-        const indcpaPublicKey = privateKey.slice(startIndex, endIndex); // indcpa public key
+
+        const indcpaPublicKey = privateKey.slice(startIndex, endIndex);
         startIndex = endIndex;
         endIndex += KyberService.paramsSymBytes;
-        const pkh = privateKey.slice(startIndex, endIndex); // sha3-256 hash
+
+        const pkHash = privateKey.slice(startIndex, endIndex);
         startIndex = endIndex;
         endIndex += KyberService.paramsSymBytes;
-        const z = privateKey.slice(startIndex, endIndex);
-        // IND-CPA decrypt
+
         const m = this.indcpa.indcpaDecrypt(cipherText, indcpaPrivateKey);
-        // hash m and pkh with SHA3-512
-        const buffer1 = Buffer.from(m);
-        const buffer2 = Buffer.from(pkh);
-        const hash1 = new SHA3(512);
-        hash1.update(buffer1).update(buffer2);
-        const krBuf = hash1.digest();
-        const kr: number[] = [];
-        for (const num of krBuf) {
-            kr.push(num);
-        }
+
+        const krBuf = new SHA3(512)
+            .update(Buffer.from(m))
+            .update(Buffer.from(pkHash))
+            .digest();
+        const kr = [...krBuf];
         const kr1 = krBuf.slice(0, KyberService.paramsSymBytes);
         const kr2Buf = krBuf.slice(KyberService.paramsSymBytes, kr.length);
-        const kr2: number[] = [];
-        for (const num of kr2Buf) {
-            kr2.push(num);
-        }
+        const kr2 = [...kr2Buf];
+
         // IND-CPA encrypt
         const cmp = this.indcpa.indcpaEncrypt(indcpaPublicKey, m, kr2);
-        // compare c and cmp to verify the generated shared secret
         const fail = constantTimeCompare(cipherText, cmp);
-        // hash c with SHA3-256
-        const md = new SHA3(256);
-        md.update(Buffer.from(cipherText));
-        const krh = md.digest();
+
         let kyberSKBytes = 0;
-        switch (this.paramsK) {
-        case 2:
+        if (this.paramsK === 2) {
             kyberSKBytes = KyberService.Kyber512SKBytes;
-            break;
-        case 3:
+        } else if (this.paramsK === 3) {
             kyberSKBytes = KyberService.Kyber768SKBytes;
-            break;
-        default:
+        } else {
             kyberSKBytes = KyberService.Kyber1024SKBytes;
         }
+
         let index = privateKey.length - KyberService.paramsSymBytes;
         for (let i = 0; i < KyberService.paramsSymBytes; i++) {
-            kr[i] = intToByte((kr[i]) ^ ((fail & 0xFF) & ((kr[i]) ^ (privateKey[index]))));
-            index += 1;
+            kr[i] = intToByte(kr[i] ^ ((fail & 0xFF) & (kr[i] ^ privateKey[index])));
+            index++;
         }
-        const tempBuf: number[] = [];
-        let ctr = 0;
-        for (ctr = 0; ctr < kr.length; ++ctr) {
-            tempBuf[ctr] = kr[ctr];
-        }
-        let ctr2 = 0;
-        for (; ctr < krh.length; ++ctr) {
-            tempBuf[ctr] = krh[ctr2++];
-        }
-        const buffer3 = Buffer.from(cipherText);
-        const hash2 = new SHA3(256);
-        hash2.update(buffer3);
-        let ch = hash2.digest();
-        const buffer4 = Buffer.from(kr1);
-        const buffer5 = Buffer.from(ch);
-        const hash3 = new SHAKE(256);
-        hash3.update(buffer4).update(buffer5);
-        const ssBuf = hash3.digest();
-        const sharedSecret: number[] = [];
-        for (let i = 0; i < KyberService.paramsSymBytes; ++i) {
-            sharedSecret[i] = ssBuf[i];
-        }
+
+        const cipherTextHash = new SHA3(256).update(Buffer.from(cipherText)).digest();
+        const sharedSecretBuffer = new SHAKE(256)
+            .update(kr1)
+            .update(cipherTextHash)
+            .digest();
+        const sharedSecret = [...sharedSecretBuffer];
+
         return sharedSecret;
     }
 }
